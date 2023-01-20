@@ -2,10 +2,10 @@ package com.niit.PizzaService.controller;
 
 import com.niit.PizzaService.domian.Pizza;
 import com.niit.PizzaService.domian.User;
-import com.niit.PizzaService.exception.PizzaNotFound;
-import com.niit.PizzaService.exception.UserAlreadyExist;
-import com.niit.PizzaService.exception.UserNotFound;
-import com.niit.PizzaService.service.UserService;
+import com.niit.PizzaService.exception.UserAlreadyExistException;
+import com.niit.PizzaService.exception.UserNotFoundExcepyion;
+import com.niit.PizzaService.repository.PizzaRepository;
+import com.niit.PizzaService.service.PizzaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,51 +15,45 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/app/v2/")
 public class UserController {
 
-    UserService userService;
+    PizzaService pizzaService;
+    PizzaRepository pizzaRepository;
+
 
     @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
-    @GetMapping("/user")
-    public ResponseEntity<?> getAllUser(){
-        return new ResponseEntity<>(userService.getAllUser(), HttpStatus.OK);
+    public UserController(PizzaService pizzaService, PizzaRepository pizzaRepository) {
+        this.pizzaService = pizzaService;
+        this.pizzaRepository = pizzaRepository;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> addUser(@RequestBody User user){
+    public ResponseEntity<?> registerUser(@RequestBody User user) {
         try {
-            return new ResponseEntity<>(userService.addUser(user),HttpStatus.CREATED);
-        } catch (UserAlreadyExist e) {
+            return new ResponseEntity<>(pizzaService.registerUser(user), HttpStatus.CREATED);
+        } catch (UserAlreadyExistException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @DeleteMapping("/user/{mail}")
-    public ResponseEntity<?> deleteUser(@PathVariable String mail){
+    @PostMapping("/user/{email}/pizzaList")
+    public ResponseEntity<?> saveUserPizzaToList(@RequestBody Pizza pizza, @PathVariable String email) {
         try {
-            return new ResponseEntity<>(userService.deleteUser(mail),HttpStatus.OK);
-        } catch (UserNotFound e) {
+            return new ResponseEntity<>(pizzaService.saveUserPizzaToList(pizza, email), HttpStatus.CREATED);
+        } catch (UserNotFoundExcepyion e) {
             throw new RuntimeException(e);
         }
     }
 
-    @GetMapping("/user/{pizzaName}")
-    public ResponseEntity<?> getPizzaByName(@PathVariable String pizzaName){
+    @GetMapping("/order/{email}")
+    public ResponseEntity<?> getAllPizzaOrdered(@PathVariable String email) {
         try {
-            return new ResponseEntity<>(userService.findAllByPizzaName(pizzaName),HttpStatus.FOUND);
-        } catch (PizzaNotFound e) {
+            return new ResponseEntity<>(pizzaService.getOrderDetails(email), HttpStatus.OK);
+        } catch (UserNotFoundExcepyion e) {
             throw new RuntimeException(e);
         }
     }
 
-    @PostMapping("/pizza/{mail}")
-    public ResponseEntity<?> saveUserPizzaToList(@RequestBody Pizza pizza, @PathVariable String mail){
-        try {
-            return new ResponseEntity<>(userService.saveUserPizzaToList(pizza,mail),HttpStatus.OK);
-        } catch (UserNotFound e) {
-            throw new RuntimeException(e);
-        }
+    @DeleteMapping("/delete/{email}/{pizzaName}")
+    public ResponseEntity<?> deleteFromPizzaList(@PathVariable String email, @PathVariable String pizzaName) {
+        return new ResponseEntity<>(pizzaService.deleteFromPizzaList(email, pizzaName), HttpStatus.OK);
     }
 }
